@@ -42,24 +42,35 @@ def callback():
         redirect_uri=REDIRECT_URI,
         code=code
     )
-    if token and 'access_token' in token:
-        user_data = Request_User_Data(TWITCH_CLIENT_ID, token['access_token'])
-        if user_data:
-            print('aqui user_data -> ' + str(user_data['id']))
 
-            followed_channels_data, total_followed_channels = Get_Followed_Channels(TWITCH_CLIENT_ID, token['access_token'], user_data['id'])
-            channel_list = [stream['broadcaster_name'] for stream in followed_channels_data]
+    user_info_token = Request_OAuth(
+        TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET,
+        grant_type='client_credentials',
+        redirect_uri=REDIRECT_URI,
+        code=code
+    )
+
+    if token and 'access_token' in token:
+        user_data = Request_User_Data(TWITCH_CLIENT_ID, token=token['access_token'])
+        if user_data:
+            followed_channels, total_followed_channels = Get_Followed_Channels(TWITCH_CLIENT_ID, token['access_token'], user_data['id'])
+            channel_list = [stream['broadcaster_name'] for stream in followed_channels]
             channel_string = '\n'.join(channel_list)
             
             channel_followers, total_channel_followers = Get_Channel_Followers(TWITCH_CLIENT_ID, token['access_token'], user_data['id'])
             followers_list = [followers['user_name'] for followers in channel_followers]
             followers_string = '\n'.join(followers_list)
-            
+
+            for channel in followed_channels:
+                data = Request_User_Data(TWITCH_CLIENT_ID, user_info_token['access_token'], user_id=channel['broadcaster_id'])
+                print('teste ->', data)
+
             return f"""
             <p>Hello {user_data['login']}, {user_data.get('email', 'not provided')}</p>
             <p>You follow {total_followed_channels} channels:<br>{channel_string}</p>
             <p>You are followed by {total_channel_followers} channels:<br>{followers_string}</p>
             """
+        
     return "Failed to retrieve user information."
 
 if __name__ == '__main__':

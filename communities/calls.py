@@ -1,6 +1,6 @@
 import requests
 
-def Request_OAuth(client_id, client_secret, redirect_uri, code, grant_type=None):
+def Request_OAuth(client_id, client_secret, redirect_uri, code, grant_type):
     params = {
         'client_id': client_id,
         'client_secret': client_secret,
@@ -17,12 +17,16 @@ def Request_OAuth(client_id, client_secret, redirect_uri, code, grant_type=None)
         print(f"Failed to fetch token. Status code: {response.status_code}, Response: {response.text}")  # Debugging line
         return None
     
-def Request_User_Data(client_id, token):
+def Request_User_Data(client_id, token, user_id=None):
     headers = {
         'Client-ID': client_id,
         'Authorization': f'Bearer {token}'
     }
-    response = requests.get('https://api.twitch.tv/helix/users', headers=headers)
+    param ={
+        'id': user_id
+    }
+
+    response = requests.get('https://api.twitch.tv/helix/users', headers=headers, params=param)
     print('Request_User_Data -> ' + str(response.json()))
     if response.status_code == 200:
         return response.json()['data'][0]
@@ -55,12 +59,12 @@ def Get_Followed_Channels(client_id, token, user_id, first=100, broadcaster_id=N
         else:
             break
        
-    print('Get_Followed_Channels -> ' + str(response.json()))
+    print('Get_Followed_Channels -> ' + str(channels))  # Debugging line
 
     if response.status_code == 200:
         return channels, response.json()['total'] #response.json()['data']
     else:
-        print(f'Failed to fetch user followed channels. Status code: {response.status_code}')
+        print(f'Failed to fetch user followed channels. Status code: {response.status_code}')  # Debugging line
         return None
 
 def Get_Channel_Followers(client_id, token, broadcaster_id, first=100):
@@ -86,11 +90,12 @@ def Get_Channel_Followers(client_id, token, broadcaster_id, first=100):
             params['after'] = data['pagination']['cursor']
         else:
             break
-       
-    print('Get_Channel_Followers -> ' + str(response.json()))
 
+    print('Get_Channel_Followers -> ' + str(followers))  # Debugging line
+       
     if response.status_code == 200:
         return followers, response.json()['total'] #response.json()['data']
     else:
-        print(f'Failed to fetch user followers. Status code: {response.status_code}')
+        print(f'Failed to fetch user followers. Status code: {response.status_code}')  # Debugging line
         return None
+    
