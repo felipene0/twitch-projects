@@ -1,7 +1,7 @@
 import os
 from flask import Flask, redirect, session, request, url_for
 from config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, REDIRECT_URI, SCOPE, STATE
-from calls import Request_OAuth, Request_User_Data, Get_Followed_Channels, Get_Channel_Followers
+from calls import Request_OAuth, Request_User_Data, Get_Streams, Get_Channel_Followers
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -51,24 +51,40 @@ def callback():
     )
 
     if token and 'access_token' in token:
-        user_data = Request_User_Data(TWITCH_CLIENT_ID, token=token['access_token'])
+        token = token['access_token']    
+        user_data = Request_User_Data(TWITCH_CLIENT_ID, token=token)
+        
         if user_data:
-            followed_channels, total_followed_channels = Get_Followed_Channels(TWITCH_CLIENT_ID, token['access_token'], user_data['id'])
+            #Who follows me
+            channel_followers = Get_Channel_Followers(TWITCH_CLIENT_ID, token, user_data['id'])
+            followers_list = [followers['user_name'] for followers in channel_followers]
+            followers_string = '\n'.join(followers_list)
+            
+            #Who i follow
+            followed_channels = Get_Streams(TWITCH_CLIENT_ID, token, user_data['id'], 'channels/followed')
             channel_list = [stream['broadcaster_name'] for stream in followed_channels]
             channel_string = '\n'.join(channel_list)
             
-            channel_followers, total_channel_followers = Get_Channel_Followers(TWITCH_CLIENT_ID, token['access_token'], user_data['id'])
-            followers_list = [followers['user_name'] for followers in channel_followers]
-            followers_string = '\n'.join(followers_list)
+            #Streams that i follow that are live right now
+            live_streams = Get_Streams(TWITCH_CLIENT_ID, token, user_data['id'], 'streams/followed')
+            live_streams_list = [stream['user_name'] for stream in live_streams]
+            live_streams_string = '\n'.join(live_streams_list)
 
-            for channel in followed_channels:
-                data = Request_User_Data(TWITCH_CLIENT_ID, user_info_token['access_token'], user_id=channel['broadcaster_id'])
-                print('teste ->', data)
+            # for channel in followed_channels:
+            #     data = Request_User_Data(TWITCH_CLIENT_ID, user_info_token['access_token'], user_id=channel['broadcaster_id'])
+            #     channel['type'] = data['type']
+            #     channel['broadcaster_type'] = data['broadcaster_type']
+            #     channel['description'] = data['description']
+            #     channel['profile_image_url'] = data['profile_image_url']
+            #     channel['created_at'] = data['created_at']
+            #     print('teste ->', data)
+
 
             return f"""
             <p>Hello {user_data['login']}, {user_data.get('email', 'not provided')}</p>
-            <p>You follow {total_followed_channels} channels:<br>{channel_string}</p>
-            <p>You are followed by {total_channel_followers} channels:<br>{followers_string}</p>
+            <p>You follow {len(channel_list)} channels:<br>{channel_string}</p>
+            <p>Only {len(live_streams_list)} are in live:<br>{live_streams_string}</p>
+            <p>You are followed by {len(followers_list)} channels:<br>{followers_string}</p>
             """
         
     return "Failed to retrieve user information."
