@@ -43,13 +43,6 @@ def callback():
         code=code
     )
 
-    user_info_token = Request_OAuth(
-        TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET,
-        grant_type='client_credentials',
-        redirect_uri=REDIRECT_URI,
-        code=code
-    )
-
     if token and 'access_token' in token:
         token = token['access_token']    
         user_data = Request_User_Data(TWITCH_CLIENT_ID, token=token)
@@ -60,25 +53,15 @@ def callback():
             followers_list = [followers['user_name'] for followers in channel_followers]
             followers_string = '\n'.join(followers_list)
             
-            #Who i follow
+            #Who am I following
             followed_channels = Get_Streams(TWITCH_CLIENT_ID, token, user_data['id'], 'channels/followed')
             channel_list = [stream['broadcaster_name'] for stream in followed_channels]
             channel_string = '\n'.join(channel_list)
             
-            #Streams that i follow that are live right now
+            #Streams that are live now
             live_streams = Get_Streams(TWITCH_CLIENT_ID, token, user_data['id'], 'streams/followed')
             live_streams_list = [stream['user_name'] for stream in live_streams]
             live_streams_string = '\n'.join(live_streams_list)
-
-            # for channel in followed_channels:
-            #     data = Request_User_Data(TWITCH_CLIENT_ID, user_info_token['access_token'], user_id=channel['broadcaster_id'])
-            #     channel['type'] = data['type']
-            #     channel['broadcaster_type'] = data['broadcaster_type']
-            #     channel['description'] = data['description']
-            #     channel['profile_image_url'] = data['profile_image_url']
-            #     channel['created_at'] = data['created_at']
-            #     print('teste ->', data)
-
 
             return f"""
             <p>Hello {user_data['login']}, {user_data.get('email', 'not provided')}</p>
